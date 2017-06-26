@@ -43,7 +43,8 @@
         gameDiv.html("Please specify the ID of the Google spreadsheet to use in the 'sheet' URL parameter.");
     } else {
         $.ajax({
-            url: "https://docs.google.com/spreadsheets/d/" + searchParams["sheet"] + "/pub?output=tsv",
+            //url: "https://docs.google.com/spreadsheets/d/" + searchParams["sheet"] + "/pub?output=tsv",
+            url: "https://spreadsheets.google.com/tq?key=" + searchParams["sheet"] + "&tqx=out:csv",
             dataType: "text",
             success: run
         });
@@ -141,8 +142,9 @@
         nextCard(data, deck);
     }
 
-    function run(tsv) {
-        var data = partTsvIntoData(tsv);
+    function run(csv) {
+        console.log(csv);
+        var data = partCsvIntoData(csv);
         try {
             checkDataValidity(data);
             start(data);

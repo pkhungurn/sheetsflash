@@ -95,6 +95,24 @@ function partTsvIntoData(tsv) {
     return data;
 }
 
+function partCsvIntoData(tsv) {
+    var lines = tsv.split("\n");
+    var n = lines.length;
+
+    var i;
+    var data = [];
+    for (i=1;i<n;i++) {
+        var fields = lines[i].trim().split(",");
+        data.push({
+            "word": fields[0].substr(1,fields[0].length-2),
+            "reading": fields[1].substr(1,fields[1].length-2),
+            "meaning": fields[2].substr(1,fields[2].length-2)
+        })
+    }
+
+    return data;
+}
+
 function Card(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack) {
     this.item = item;
     this.gameDiv = gameDiv;

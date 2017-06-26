@@ -101,12 +101,30 @@ function partCsvIntoData(tsv) {
 
     var i;
     var data = [];
-    for (i=1;i<n;i++) {
+    for (i = 1; i < n; i++) {
         var fields = lines[i].trim().split(",");
         data.push({
-            "word": fields[0].substr(1,fields[0].length-2),
-            "reading": fields[1].substr(1,fields[1].length-2),
-            "meaning": fields[2].substr(1,fields[2].length-2)
+            "word": fields[0].substr(1, fields[0].length - 2),
+            "reading": fields[1].substr(1, fields[1].length - 2),
+            "meaning": fields[2].substr(1, fields[2].length - 2)
+        })
+    }
+
+    return data;
+}
+
+function parseGoogleSheetsResponseIntoData(response) {
+    var rows = response.table.rows;
+    var n = rows.length;
+
+    var i;
+    var data = [];
+    for (i = 1; i < n; i++) {
+        var row = rows[i];
+        data.push({
+            "word": row.c[0].v,
+            "reading": row.c[1].v,
+            "meaning": row.c[2].v
         })
     }
 

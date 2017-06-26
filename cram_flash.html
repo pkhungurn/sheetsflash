@@ -44,9 +44,8 @@
     } else {
         $.ajax({
             //url: "https://docs.google.com/spreadsheets/d/" + searchParams["sheet"] + "/pub?output=tsv",
-            url: "https://spreadsheets.google.com/tq?key=" + searchParams["sheet"] + "&tqx=out:csv",
-            dataType: "text",
-            success: run
+            url: "https://spreadsheets.google.com/tq?key=" + searchParams["sheet"] + "&tqx=responseHandler:run",
+            dataType: "jsonp"
         });
     }
 

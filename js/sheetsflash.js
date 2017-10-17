@@ -113,7 +113,7 @@ function partCsvIntoData(tsv) {
     return data;
 }
 
-function parseGoogleSheetsResponseIntoData(response) {
+function parseGoogleSheetsResponseIntoWordReadingMeaningData(response) {
     var rows = response.table.rows;
     var n = rows.length;
 
@@ -248,6 +248,34 @@ MeaningCard.prototype.html = function () {
         "</tr>" +
         "</table>";
 };
+
+function MeaningAndExampleCard(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack) {
+    Call.call(this, item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
+}
+MeaningAndExampleCard.prototype = Object.create(Card.prototype);
+MeaningAndExampleCard.prototype.constructor = MeaningAndExampleCard;
+MeaningAndExampleCard.prototype.displayAnswer = function() {
+    var meaningButton = $("#meaningButton");
+    meaningButton.html(this.item.meaning);
+    var exampleButton = $("#exampleButton");
+    exampleButton.html(this.item.example); 
+}
+MeaningAndExampleCard.prototype.html = function() {
+    return "<table class='table'>" +
+        "<tr><td colspan='2' id='wordCell' style='border: none'><h1 align='center'>" + this.item.word + "</h1></td></tr>" +
+        "<tr><td colspan='2' id='meaningCell' style='border: none' align='center'>" +
+        "<button style='width: 100%' class='btn btn-default' id='meaningButton'>Meaning = ???</button>" +
+        "</td></tr>" +
+        "<tr><td colspan='2' id='exampleCell' style='border: none' align='center'>" +
+        "<button style='width: 100%' class='btn btn-default' id='exampleButton'>Example = ???</button>"
+        "</td></tr>" +
+        "<tr id='buttonRow'>" +
+        "<td style='border: none' align='center'>" +
+        "<button class='btn btn-primary' style='width: 100%' id='showButton'>Show answer...</button>" +
+        "</td>" +
+        "</tr>" +
+        "</table>"
+}
 
 function Question(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack) {
     this.item = item;

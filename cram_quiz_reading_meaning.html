@@ -67,20 +67,20 @@
         );
     }
 
-    function nextCard(data, deck) {
+    function nextQuestion(data, deck) {
         var k = randInt(deck.length);
 
         if (deck.length === 0) {
-            alert("You've done one round of the cards. Each card was reviewed " + repetition + " time(s). " +
-                "Clicking 'OK' will restart the deck.");
+            alert("You've done one round of the questions. Each question was used " + repetition + " time(s). " +
+                "Clicking 'OK' will restart the quiz.");
             start(data);
         } else {
-            var cardSpec = deck[k];
+            var questionSpec = deck[k];
             if (k !== deck.length - 1) {
                 deck[k] = deck[deck.length - 1];
-                deck[deck.length - 1] = cardSpec;
+                deck[deck.length - 1] = questionSpec;
             }
-            var item = data[cardSpec.index];
+            var item = data[questionSpec.index];
 
             function correctCallBack(card) {
                 deck.pop();
@@ -102,17 +102,17 @@
             }
 
             function nextCallBack(card) {
-                nextCard(data, deck);
+                nextQuestion(data, deck);
             }
 
-            var card;
-            if (cardSpec.type === "meaning") {
-                card = new MeaningCard(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
+            var question;
+            if (questionSpec.type === "meaning") {
+                question = new MeaningQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
             } else {
-                card = new ReadingCard(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
+                question = new ReadingQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
             }
 
-            card.run();
+            question.run();
         }
     }
 
@@ -137,12 +137,12 @@
         mistakeCount = 0;
 
         updateStatusParagraph();
-        nextCard(data, deck);
+        nextQuestion(data, deck);
     }
 
     function run(response) {
         try {
-            var data = parseGoogleSheetsResponseIntoData(response);
+            var data = parseGoogleSheetsResponseIntoWordReadingMeaningData(response);
             checkDataValidity(data);
             start(data);
         } catch (errorMessage) {

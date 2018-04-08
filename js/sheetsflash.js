@@ -554,7 +554,7 @@ class AccentQuestion {
     accentText(position) {
         var reading = this.item.reading;
         if (position === 0) {
-            return this.item.reading + "￣<br/>"　
+            return this.item.reading + "￣（平板）<br/>"　
         } else {
             var result = "";
             var n = this.item.reading.length;
@@ -576,6 +576,6 @@ class AccentQuestion {
         this.item.accent.map(function(i) {
             accentCellHtml += thou.accentText(i);
         });
-        accentCell.html(accentCellHtml);
+        accentCell.html("<b>" + accentCellHtml + "</b>");
     }
 }

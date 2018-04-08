@@ -23,6 +23,13 @@
     <div id="gameDiv">
     </div>
     <p id="statusParagraph" align="center"></p>
+    <hr/>
+    <p align="center">
+        This is a quiz on the pitch accents of Japanese words.<br/>
+        Click on the syllable after which the pitch drops.<br/>
+        If there is no drop, click the 平板 button.<br/>
+        There may be more than one answers. Choose any of them.<br/>
+    </p>
 </div>
 
 <script type="text/javascript" src="js/jquery.min.js"></script>
@@ -36,7 +43,13 @@
 
     var repetition = searchParams["rep"];
     if (repetition === undefined) {
-        repetition = 5;
+        repetition = 1;
+    }
+    var randomDeck = true;
+    if (searchParams["random"] == "true" || searchParams["random"] == undefined) {
+        randomDeck = true;
+    } else {
+        randomDeck = false;
     }
 
     if (searchParams["sheet"] === undefined) {
@@ -67,9 +80,7 @@
         );
     }
 
-    function nextCard(data, deck) {
-        var k = randInt(deck.length);
-
+    function nextCard(data, deck) {            
         function correctCallBack(card) {
             deck.pop();
             doneCount += 1;
@@ -94,16 +105,28 @@
         }
 
         if (deck.length === 0) {
-            alert("You've done one round of the cards. Each card was reviewed " + repetition + " time(s). " +
-                "Clicking 'OK' will restart the deck.");
+            alert("You've gone through all the questions. "+
+                "Clicking 'OK' to restart the quiz.");
             start(data);
         } else {
-            var index = deck[k];
-            if (k !== deck.length - 1) {
-                deck[k] = deck[deck.length - 1];
-                deck[deck.length - 1] = index;
+            var k;
+            if (randomDeck) {
+                k = randInt(deck.length);
+            } else {
+                k = 0;
             }
-            var item = data[index];            
+            var index = deck[k];
+            var item = data[index];
+            if (randomDeck) {
+                if (k !== deck.length - 1) {
+                    deck[k] = deck[deck.length - 1];
+                    deck[deck.length - 1] = index;            
+                }
+            } else {
+                deck.splice(0,1);
+                deck.push(index);
+            }
+            
             var question = new AccentQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
             question.run();
         }
@@ -111,7 +134,7 @@
 
     function createNewDeck(data) {
         var deck = [];
-        var i;
+        var i;                
         for (i = 0; i < data.length; i++) {
             for (j = 0; j < repetition; j++) {
                 deck.push(i);

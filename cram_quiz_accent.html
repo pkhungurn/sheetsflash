@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <title>Flash Card</title>
+    <title>Accent Quiz</title>
 
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet">
@@ -67,51 +67,44 @@
         );
     }
 
-    function nextQuestion(data, deck) {
+    function nextCard(data, deck) {
         var k = randInt(deck.length);
 
+        function correctCallBack(card) {
+            deck.pop();
+            doneCount += 1;
+
+            attemptCount += 1;
+
+            updateStatusParagraph();
+        }
+
+        function wrongCallBack(card) {
+            deck.pop();
+            doneCount += 1;
+
+            attemptCount += 1;
+            mistakeCount += 1;
+
+            updateStatusParagraph();
+        }
+
+        function nextCallBack(card) {
+            nextCard(data, deck);
+        }
+
         if (deck.length === 0) {
-            alert("You've done one round of the questions. Each question was used " + repetition + " time(s). " +
-                "Clicking 'OK' will restart the quiz.");
+            alert("You've done one round of the cards. Each card was reviewed " + repetition + " time(s). " +
+                "Clicking 'OK' will restart the deck.");
             start(data);
         } else {
-            var questionSpec = deck[k];
+            var index = deck[k];
             if (k !== deck.length - 1) {
                 deck[k] = deck[deck.length - 1];
-                deck[deck.length - 1] = questionSpec;
+                deck[deck.length - 1] = index;
             }
-            var item = data[questionSpec.index];
-
-            function correctCallBack(card) {
-                deck.pop();
-                doneCount += 1;
-
-                attemptCount += 1;
-
-                updateStatusParagraph();
-            }
-
-            function wrongCallBack(card) {
-                deck.pop();
-                doneCount += 1;
-
-                attemptCount += 1;
-                mistakeCount += 1;
-
-                updateStatusParagraph();
-            }
-
-            function nextCallBack(card) {
-                nextQuestion(data, deck);
-            }
-
-            var question;
-            if (questionSpec.type === "meaning") {
-                question = new MeaningQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
-            } else {
-                question = new ReadingQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
-            }
-
+            var item = data[index];            
+            var question = new AccentQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
             question.run();
         }
     }
@@ -121,8 +114,7 @@
         var i;
         for (i = 0; i < data.length; i++) {
             for (j = 0; j < repetition; j++) {
-                deck.push({index: i, type: "meaning"});
-                deck.push({index: i, type: "reading"});
+                deck.push(i);
             }
         }
         return deck;
@@ -137,13 +129,13 @@
         mistakeCount = 0;
 
         updateStatusParagraph();
-        nextQuestion(data, deck);
+        nextCard(data, deck);
     }
 
     function run(response) {
         try {
-            var data = parseGoogleSheetsResponseIntoWordReadingMeaningData(response);
-            checkWordReadingMeaningDataValidity(data);
+            var data = parseGoogleSheetsResponseIntoWordReadingAccentData(response);
+            checkWordReadingAccentDataValidity(data);
             start(data);
         } catch (errorMessage) {
             $("#gameDiv").html(errorMessage);

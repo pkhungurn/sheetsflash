@@ -4,7 +4,7 @@ function getSearchParams(k){
     return k?p[k]:p;
 }
 
-function checkDataValidity(data) {
+function checkWordReadingMeaningDataValidity(data) {
     if (!$.isArray(data)) {
         throw "Data is not an array.";
     } else if (data.length === 0) {
@@ -29,6 +29,43 @@ function checkDataValidity(data) {
     }
 }
 
+function checkWordReadingAccentDataValidity(data) {
+    if (!$.isArray(data)) {
+        throw "Data is not an array.";
+    } else if (data.length === 0) {
+        throw "Data array is empty.";
+    } else {
+        var i;
+        for (i = 0; i < data.length; i++) {
+            var item = data[i];
+            if (!item.hasOwnProperty("word")) {
+                throw "The " + i + "th item does not have the 'word' field.";
+            }
+            if (!item.hasOwnProperty("reading")) {
+                throw "The " + i + "th item does not have the 'reading' field.";
+            }
+            if (!wanakana.isHiragana(item.reading)) {
+                throw "The " + i + "th item's reading is not Hiragana.";
+            }
+            if (!item.hasOwnProperty("accent")) {
+                throw "The " + i + "th item does not have the 'accent' field.";
+            }
+            if (!$.isArray(item.accent)) {
+                throw "The " + i + "th item accent field is not an array.";
+            }
+            if (item.accent.length === 0) {
+                throw "The " + i + "th item accent field is empty.";
+            }
+            var j;
+            for (j=0; j < item.accent.length; j++) {
+                if (!(item.accent[j] === parseInt(item.accent[j], 10))) {
+                    throw "The " + i + "th item's " + j + "th accent data is not an integer.";
+                }
+            }
+        }
+    }
+}
+
 function decomposeToWordSequence(s) {
     return s.split(/\s+/);
 }
@@ -41,6 +78,10 @@ function decomposeMeaningString(meaningString) {
         });
     });
     return meanings;
+}
+
+function decomposeAccentString(accentString) {
+    return accentString.split(",").map(x => parseInt(x));
 }
 
 function arraysEqual(a, b) {
@@ -77,7 +118,7 @@ function chooseRandomItem(data) {
     return data[randInt(data.length)];
 }
 
-function partTsvIntoData(tsv) {
+function parseTsvIntoData(tsv) {
     var lines = tsv.split("\n");
     var n = lines.length;
 
@@ -95,7 +136,7 @@ function partTsvIntoData(tsv) {
     return data;
 }
 
-function partCsvIntoData(tsv) {
+function parseCsvIntoData(tsv) {
     var lines = tsv.split("\n");
     var n = lines.length;
 
@@ -126,6 +167,24 @@ function parseGoogleSheetsResponseIntoWordReadingMeaningData(response) {
             "reading": row.c[1].v,
             "meaning": row.c[2].v
         })
+    }
+
+    return data;
+}
+
+function parseGoogleSheetsResponseIntoWordReadingAccentData(response) {
+    var rows = response.table.rows;
+    var n = rows.length;
+
+    var i;
+    var data = [];
+    for (i=1; i < n; i++) {
+        var row = rows[i];
+        data.push({
+            "word": row.c[0].v,
+            "reading": row.c[1].v,
+            "accent": decomposeAccentString(row.c[2].v.toString())
+        });
     }
 
     return data;
@@ -400,9 +459,123 @@ MeaningQuestion.prototype.html = function () {
 MeaningQuestion.prototype.checkAnswer = function(answer) {
     answer = $.trim(answer);
     return checkAnswerAgainstMeaning(answer, this.item.meaning);
-}
+};
 MeaningQuestion.prototype.displayAnswer = function () {
     var meaningCell = $("#meaningCell");
     meaningCell.html(this.item.meaning);
 };
 
+class AccentQuestion {
+    constructor(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack) {
+        this.item = item;
+        this.gameDiv = gameDiv;
+        this.correctCallBack = correctCallBack;
+        this.wrongCallBack = wrongCallBack;
+        this.nextCallBack = nextCallBack;        
+    }
+
+    get html() {
+        return "<table class='table'>" +
+        "<tr><td colspan='2' id='wordCell' style='border: none'><h1 align='center'>" + this.item.word + "</h1></td></tr>" +
+        "<tr><td colspan='2' id='readingCell' style='border: none' align='center'>" + this.item.reading + "</td></tr>" +
+        "<tr><td colspan='2' id='accentCell' style='border: none' align='center'></td></tr>" +
+        "<tr><td colspan='2' id='buttonCell' style='border: none' align='center'></td></tr>" +
+        "</table>";
+    }
+
+    asssignAccentButtonCallback(index) {
+        var thou = this;
+        var accentButton = $("#accentButton" + index);        
+        accentButton.click(function() {                
+            thou.check(index);
+        });            
+    }
+
+    run() {
+        var thou = this;
+        this.gameDiv.html(this.html);
+        var accentCell = $("#accentCell");
+
+        var accentCellHtml = "";
+        var i;
+        var n = this.item.reading.length;
+        for(i=0;i<n;i++) {
+            accentCellHtml += "<button type='button' id='accentButton" + (i+1) + "'>" + 
+                this.item.reading[i] + "＼</button> ";
+        }
+        accentCellHtml += "<button type='button' id='accentButton0'>平板</button>"
+        accentCell.html(accentCellHtml);
+        
+        for(i=0;i<=n;i++) {
+            this.asssignAccentButtonCallback(i);
+        }
+
+        $(window).keypress(function (event) {
+            if (!isNaN(parseInt(event.key))) {
+                thou.check(parseInt(event.key));
+            }
+        });
+    }
+
+    check(answer) {
+        var correct = $.inArray(answer, this.item.accent) != -1;
+        this.displayAnswer();
+
+        var wordCell = $("#wordCell");
+        var readingCell = $("#readingCell");
+        var meaningCell = $("#accentCell");        
+        var buttonCell = $("#buttonCell");
+
+        if (correct) {            
+            this.correctCallBack(this);
+            wordCell.addClass("success");
+            readingCell.addClass("success");
+            meaningCell.addClass("success");
+            buttonCell.addClass("success");
+        } else {
+            this.wrongCallBack(this);
+            wordCell.addClass("danger");
+            readingCell.addClass("danger");
+            meaningCell.addClass("danger");
+            buttonCell.addClass("danger");
+        }
+
+        buttonCell.html("<button style='width: 100%' id='nextButton' class='btn'>Next!</button>");
+
+        var nextButton = $("#nextButton");
+        var thou = this;
+        nextButton.click(function () {
+            thou.nextCallBack(this);
+        });
+        nextButton.focus();
+        $(window).off("keypress");
+    }
+
+    accentText(position) {
+        var reading = this.item.reading;
+        if (position === 0) {
+            return this.item.reading + "￣<br/>"　
+        } else {
+            var result = "";
+            var n = this.item.reading.length;
+            var i;
+            for(i=0;i<n;i++) {
+                result += this.item.reading[i];
+                if (i==position-1) {
+                    result += "＼";
+                }
+            }
+            return result + "<br/>";
+        }
+    }
+
+    displayAnswer() {
+        var accentCell = $("#accentCell");
+        var accentCellHtml = "";
+        var thou = this;
+        this.item.accent.map(function(i) {
+            accentCellHtml += thou.accentText(i);
+        });
+        accentCell.html(accentCellHtml);
+    }
+}

@@ -66,6 +66,34 @@ function checkWordReadingAccentDataValidity(data) {
     }
 }
 
+function checkBushuDataValidity(data) {
+    if (!$.isArray(data)) {
+        throw "Data is not an array.";
+    } else if (data.length === 0) {
+        throw "Data array is empty.";
+    } else {
+        var i;
+        for (i = 0; i < data.length; i++) {
+            var item = data[i];
+            if (!item.hasOwnProperty("kanji")) {
+                throw "The " + i + "th item does not have the 'kanji' field.";
+            }
+            if (!item.hasOwnProperty("bushu")) {
+                throw "The " + i + "th item does not have the 'bushu' field.";
+            }
+            if (!item.hasOwnProperty("name")) {
+                throw "The " + i + "th item does not have the 'name' field.";
+            }
+            var j;
+            for (j=0; j < item.name.length; j++) {
+                if (!wanakana.isHiragana(item.name[j])) {                    
+                    throw "The " + i + "th item's " + j + "th name is not Hiragana.";                    
+                }            
+            }            
+        }
+    }
+}
+
 function decomposeToWordSequence(s) {
     return s.split(/\s+/);
 }
@@ -82,6 +110,10 @@ function decomposeMeaningString(meaningString) {
 
 function decomposeAccentString(accentString) {
     return accentString.split(",").map(x => parseInt(x));
+}
+
+function decomposeBushuNameString(accentString) {
+    return accentString.split("、");
 }
 
 function arraysEqual(a, b) {
@@ -185,6 +217,25 @@ function parseGoogleSheetsResponseIntoWordReadingAccentData(response) {
             "reading": row.c[1].v,
             "accent": decomposeAccentString(row.c[2].v.toString())
         });
+    }
+
+    return data;
+}
+
+function parseGoogleSheetsResponseIntoBushuData(response) {
+    var rows = response.table.rows;
+    var n = rows.length;
+
+    var i;
+    var data = [];
+    for (i=1; i < n; i++) {
+        var row = rows[i];
+        data.push({
+            "kanji": row.c[0].v,
+            "bushu": row.c[1].v,
+            "name": decomposeBushuNameString(row.c[2].v)
+        });
+
     }
 
     return data;
@@ -326,7 +377,7 @@ MeaningAndExampleCard.prototype.html = function() {
         "<button style='width: 100%' class='btn btn-default' id='meaningButton'>Meaning = ???</button>" +
         "</td></tr>" +
         "<tr><td colspan='2' id='exampleCell' style='border: none' align='center'>" +
-        "<button style='width: 100%' class='btn btn-default' id='exampleButton'>Example = ???</button>"
+        "<button style='width: 100%' class='btn btn-default' id='exampleButton'>Example = ???</button>" +
         "</td></tr>" +
         "<tr id='buttonRow'>" +
         "<td style='border: none' align='center'>" +
@@ -578,4 +629,69 @@ class AccentQuestion {
         });
         accentCell.html("<b>" + accentCellHtml + "</b>");
     }
+}
+
+function BushuQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack) {
+    Question.call(this, item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
+}
+BushuQuestion.prototype = Object.create(Question.prototype);
+BushuQuestion.prototype.constructor = BushuQuestion;
+BushuQuestion.prototype.html = function () {
+    return "<table class='table'>" +
+        "<tr><td colspan='2' id='kanjiCell' style='border: none'><h1 align='center'>" + this.item.kanji + "</h1></td></tr>" +        
+        "<tr><td colspan='2' id='bushuCell' style='border: none'><h2 align='center'>部首＝？</h2></td></tr>" +
+        "<tr><td colspan='2' id='nameCell' style='border: none' align='center'>" +
+        "<input type='text' id='userText' style='width: 100%; text-align: center'>" +
+        "</td></tr>" +
+        "<tr id='buttonRow'>" +
+        "<td style='border: none' align='center' id='buttonCell'>" +
+        "<button class='btn' style='width: 100%' id='checkButton'>Check!</button>" +
+        "</td>" +
+        "</tr>" +
+        "</table>";
+};
+BushuQuestion.prototype.displayAnswer = function () {
+    var bushuCell = $("#bushuCell");
+    bushuCell.html("<h1 align='center'>" + this.item.bushu + "</h1>");
+    var nameCell = $("#nameCell");
+    nameCell.html(this.item.name);
+};
+BushuQuestion.prototype.checkAnswer = function(answer) {
+    answer = wanakana.toKana($.trim(answer));
+    return this.item.name.includes(answer)
+};
+BushuQuestion.prototype.check = function() {
+    var nameText = $("#userText");
+    var answer = nameText.val();
+    var correct = this.checkAnswer(answer);    
+
+    this.displayAnswer();
+
+    var kanjiCell = $("#kanjiCell");
+    var bushuCell = $("#bushuCell");
+    var nameCell = $("#nameCell");
+    var buttonCell = $("#buttonCell");
+
+    if (correct) {
+        this.correctCallBack(this);
+        kanjiCell.addClass("success");
+        bushuCell.addClass("success");
+        nameCell.addClass("success");
+        buttonCell.addClass("success");
+    } else {
+        this.wrongCallBack(this);
+        kanjiCell.addClass("danger");
+        bushuCell.addClass("danger");
+        nameCell.addClass("danger");
+        buttonCell.addClass("danger");
+    }
+
+    buttonCell.html("<button style='width: 100%' id='nextButton' class='btn'>Next!</button>");
+
+    var nextButton = $("#nextButton");
+    var thou = this;
+    nextButton.click(function () {
+        thou.nextCallBack(this);
+    });        
+    nextButton.focus();
 }

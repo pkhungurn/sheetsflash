@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Bushu Quiz</title>
+
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/theme.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+<body>
+<div class="container">
+    <div id="gameDiv">
+    </div>
+    <p id="statusParagraph" align="center"></p>
+</div>
+
+<script type="text/javascript" src="js/jquery.min.js"></script>
+<script type="text/javascript" src="js/wanakana.min.js"></script>
+<script type="text/javascript" src="js/sheetsflash.js"></script>
+
+<script type="text/javascript">
+    var gameDiv = $("#gameDiv");
+
+    var searchParams = getSearchParams();
+
+    var repetition = searchParams["rep"];
+    if (repetition === undefined) {
+        repetition = 5;
+    }
+
+    if (searchParams["sheet"] === undefined) {
+        gameDiv.html("Please specify the ID of the Google spreadsheet to use in the 'sheet' URL parameter.");
+    } else {
+        $.ajax({
+            url: "https://spreadsheets.google.com/tq?key=" + searchParams["sheet"] + "&tqx=responseHandler:run",
+            dataType: "jsonp"
+        });
+    }
+
+    var totalCount = 0;
+    var doneCount = 0;
+    var attemptCount = 0;
+    var mistakeCount = 0;
+
+    function updateStatusParagraph() {
+        var progress = doneCount / totalCount * 100;
+        var precision = (attemptCount - mistakeCount) / attemptCount * 100;
+        if (isNaN(precision)) {
+            precision = 0;
+        }
+
+        var statusParagraph = $("#statusParagraph");
+        statusParagraph.html(
+            "Progress: " + doneCount + "/" + totalCount + " (" + progress.toFixed(2) + "%); " +
+            "Precision: " + (attemptCount - mistakeCount) + "/" + attemptCount + " (" + precision.toFixed(2) + "%)"
+        );
+    }
+
+    function nextCard(data, deck) {
+        var k = randInt(deck.length);
+
+        if (deck.length === 0) {
+            alert("You've done one round of the cards. Each card was reviewed " + repetition + " time(s). " +
+                "Clicking 'OK' will restart the deck.");
+            start(data);
+        } else {
+            var cardSpec = deck[k];
+            if (k !== deck.length - 1) {
+                deck[k] = deck[deck.length - 1];
+                deck[deck.length - 1] = cardSpec;
+            }
+            var item = data[cardSpec.index];
+
+            function correctCallBack(card) {
+                deck.pop();
+                doneCount += 1;
+
+                attemptCount += 1;
+
+                updateStatusParagraph();
+            }
+
+            function wrongCallBack(card) {
+                deck.pop();
+                doneCount += 1;
+
+                attemptCount += 1;
+                mistakeCount += 1;
+
+                updateStatusParagraph();
+            }
+
+            function nextCallBack(card) {
+                nextCard(data, deck);
+            }
+
+            var card = new BushuQuestion(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
+            
+            card.run();
+        }
+    }
+
+    function createNewDeck(data) {
+        var deck = [];
+        var i;
+        for (i = 0; i < data.length; i++) {
+            for (j = 0; j < repetition; j++) {
+                deck.push({index: i});                
+            }
+        }
+        return deck;
+    }
+
+    function start(data) {
+        var deck = createNewDeck(data);
+
+        totalCount = deck.length;
+        doneCount = 0;
+        attemptCount = 0;
+        mistakeCount = 0;
+
+        updateStatusParagraph();
+        nextCard(data, deck);
+    }
+
+    function run(response) {
+        try {
+            var data = parseGoogleSheetsResponseIntoBushuData(response);
+            checkBushuDataValidity(data);
+            start(data);
+        } catch (errorMessage) {
+            $("#gameDiv").html(errorMessage);
+        }
+    }
+</script>
+
+</body>
+</html>

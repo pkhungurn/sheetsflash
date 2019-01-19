@@ -695,3 +695,68 @@ BushuQuestion.prototype.check = function() {
     });        
     nextButton.focus();
 }
+
+function BushuCard(item, gameDiv, correctCallBack, wrongCallBack, nextCallBack) {
+    Card.call(this, item, gameDiv, correctCallBack, wrongCallBack, nextCallBack);
+}
+BushuCard.prototype = Object.create(Card.prototype);
+BushuCard.prototype.constructor = BushuCard;
+BushuCard.prototype.displayAnswer = function () {
+    var bushuCell = $("#bushuCell");
+    bushuCell.html("<h1 align='center'>" + this.item.bushu + "</h1>");
+    var nameCell = $("#nameCell");
+    nameCell.html(this.item.name);
+};
+BushuCard.prototype.html = function () {
+    return "<table class='table'>" +
+        "<tr><td colspan='2' id='kanjiCell' style='border: none'><h1 align='center'>" + this.item.kanji + "</h1></td></tr>" +        
+        "<tr><td colspan='2' id='bushuCell' style='border: none'><h2 align='center'>部首＝？</h2></td></tr>" +
+        "<tr><td colspan='2' id='nameCell' style='border: none' align='center'>部首名＝？</td></tr>" +
+        "<tr id='buttonRow'>" +
+        "<td style='border: none' align='center'>" +
+        "<button class='btn btn-primary' style='width: 100%' id='showButton'>Show answer...</button>" +
+        "</td>" +
+        "</tr>" +
+        "</table>";
+};
+BushuCard.prototype.showAnswer　= function () {
+    var thou = this;
+
+    this.displayAnswer();
+
+    var buttonRow = $("#buttonRow");
+    buttonRow.html(
+        "<td id='correctCell' width='50%' style='border: none' align='center'>" +
+        "<button style='width: 100%' class='btn btn-danger' id='wrongButton'>&#10008; Too bad!</button>" +
+        "</td>" +
+        "<td id='correctCell' width='50%' style='border: none' align='center'>" +
+        "<button style='width: 100%' class='btn btn-success' id='correctButton'>&#10003; Got it!</button>" +
+        "</td>"
+    );
+
+    var correctButton = $("#correctButton");
+    var correctFunc = function () {
+        if (thou.correctCallBack !== null) {
+            thou.correctCallBack(this);
+        }
+        thou.nextCallBack(this);
+    };
+    correctButton.click(correctFunc);
+
+    var wrongButton = $("#wrongButton");
+    var wrongFunc = function () {
+        if (thou.wrongCallBack !== null) {
+            thou.wrongCallBack(this)
+        }
+        thou.nextCallBack(this);
+    };
+    wrongButton.click(wrongFunc);
+
+    $(window).keypress(function (event) {
+        if (event.key === "Enter" || event.key === "Space" || event.key === "2") {
+            correctFunc();
+        } else if (event.key === "Escape" || event.key === "Backspace" || event.key === "1") {
+            wrongFunc();
+        }
+    });
+}

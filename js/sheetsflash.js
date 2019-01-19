@@ -654,7 +654,7 @@ BushuQuestion.prototype.displayAnswer = function () {
     var bushuCell = $("#bushuCell");
     bushuCell.html("<h1 align='center'>" + this.item.bushu + "</h1>");
     var nameCell = $("#nameCell");
-    nameCell.html(this.item.name);
+    nameCell.html(this.item.name.join("、"));
 };
 BushuQuestion.prototype.checkAnswer = function(answer) {
     answer = wanakana.toKana($.trim(answer));
@@ -705,7 +705,7 @@ BushuCard.prototype.displayAnswer = function () {
     var bushuCell = $("#bushuCell");
     bushuCell.html("<h1 align='center'>" + this.item.bushu + "</h1>");
     var nameCell = $("#nameCell");
-    nameCell.html(this.item.name);
+    nameCell.html(this.item.name.join("、"));
 };
 BushuCard.prototype.html = function () {
     return "<table class='table'>" +
